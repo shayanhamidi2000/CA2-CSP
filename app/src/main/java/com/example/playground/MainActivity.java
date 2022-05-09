@@ -9,6 +9,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -47,10 +48,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     @Override
     public void onSensorChanged(SensorEvent event) {
         LineChart chart = (LineChart) findViewById(R.id.chart);
+        epoch ++;
         x_entries.add(new Entry(epoch, event.values[0]));
         y_entries.add(new Entry(epoch, event.values[1]));
         z_entries.add(new Entry(epoch, event.values[2]));
-        epoch ++;
+        Log.d("MainActivity","X accleration: " + String.valueOf(event.values[0]));
+        Log.d("MainActivity","Y accleration: " + String.valueOf(event.values[1]));
+        Log.d("MainActivity","Z accleration: " + String.valueOf(event.values[2]));
         chart.invalidate();
     }
 
@@ -65,6 +69,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     private void setup_chart(){
+        x_entries.add(new Entry(0, 0));
+        y_entries.add(new Entry(0 , 0));
+        z_entries.add(new Entry(0 , 0));
         LineChart chart = (LineChart) findViewById(R.id.chart);
         LineDataSet dataSet_x = new LineDataSet(this.x_entries, "X");
         dataSet_x.setColor(Color.RED);
