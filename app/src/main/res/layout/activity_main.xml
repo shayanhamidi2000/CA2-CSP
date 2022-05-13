@@ -26,7 +26,6 @@
         android:layout_marginEnd="159dp"
         android:layout_marginBottom="15dp"
         android:onClick="say_kir"
-        android:text="Button"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="1.0"
