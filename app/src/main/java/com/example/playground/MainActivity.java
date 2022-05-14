@@ -15,6 +15,7 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
@@ -27,13 +28,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private SensorManager mSensorManager;
     private Sensor mAccSensor;
     private Sensor mLinSensor;
-    private int chart_window_size = 50;
+    private int chart_window_size = 100;
     private boolean isRunning = false;
     private LineChart chart;
 
     private double mCosTheta;
     private double mSinTheta;
-    private double dt = .1;
+    private double dt = 0.2;
+
+    float y;
+    float z;
+    double v;
 
     private List<Double> y_acc = new ArrayList<>();
     private List<Double> y_vel = new ArrayList<>();
@@ -54,9 +59,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         mAccSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
     }
 
-    private double calculate_theta(float acceleration_z){
-        mCosTheta = acceleration_z / 9.9;
-        mSinTheta = Math.sqrt(1.0 - Math.pow(mCosTheta, 2));
+    private double calculate_theta(float acceleration_z, float last_acc_real_y){
+        mCosTheta = Math.min(acceleration_z / 9.9, 1.0);
+        if (last_acc_real_y > 0)
+            mSinTheta = Math.sqrt(1.0 - Math.pow(mCosTheta, 2));
+        else
+            mSinTheta = (-1)*Math.sqrt(1.0 - Math.pow(mCosTheta, 2));
+
         return Math.acos(mCosTheta)*180/Math.PI;
     }
 
@@ -67,9 +76,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             y_acc.remove(0);
     }
 
-    private void addDataPointToVelocityEntries(double dataPoint_y){
+    private void addDataPointToVelocityEntries(){
+        v += get_average(y_acc)*dt;
+        if (v < 0)
+            v = 0;
         int number_of_data_points = y_vel.size();
-        y_vel.add(dataPoint_y);
+        y_vel.add(v);
         if (number_of_data_points > chart_window_size)
             y_vel.remove(0);
     }
@@ -87,19 +99,29 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         return sum / iter;
     }
 
+    private void add_entry(float dy, float dz){
+        //int number_of_datapoints = entries.size();
+        y += dy;
+        z += dz;
+        Log.d("MainActivity","Point: (" + String.valueOf(delete_noise(y, 1)) + ", " + String.valueOf(delete_noise(z, 1)) + ")");
+        entries.add(new Entry(y, z));
+/*        if(number_of_datapoints > chart_window_size)
+            entries.remove(0);*/
+    }
+
     @Override
     public void onSensorChanged(SensorEvent event) {
         if(event.sensor.getType() == Sensor.TYPE_ACCELEROMETER){
             TextView textView = (TextView) findViewById(R.id.textView);
-            textView.setText("Kiram Dahanet: " + String.valueOf((int)calculate_theta(event.values[2])));
-            Log.d("MainActivity","X acceleration: " + String.valueOf(event.values[2]));
+            textView.setText(
+                    "Angle: " + String.valueOf((int)calculate_theta(event.values[2], event.values[1]))+"\n"+
+                            "(Y, Z): (" + String.valueOf(y) + ", " + String.valueOf(z) + ")");
         }else if(event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION){
-            /*double acc_y = delete_noise(event.values[1], 1);
+            double acc_y = delete_noise(event.values[1], 1);
             addDataPointToAccelerationEntries(acc_y);
-            addDataPointToVelocityEntries(get_average(y_acc)*dt);
-            entries.add(new Entry((float)(get_average(y_vel)*dt*mCosTheta), (float)(get_average(y_vel)*dt*mSinTheta)));
-            Log.d("MainActivity","Y acceleration: " + String.valueOf(acc_y));
-            draw_chart();*/
+            addDataPointToVelocityEntries();
+            add_entry((float)(get_average(y_vel)*dt*mCosTheta), (float)(get_average(y_vel)*dt*mSinTheta));
+            draw_chart();
         }
     }
 
@@ -112,9 +134,19 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             mSensorManager.unregisterListener(this);
             button.setText("Start");
         }else{
+            entries.clear();
+            y_acc.clear();
+            y_vel.clear();
+            chart.clear();
+            this.y = 0;
+            this.z = 0;
+            this.v = 0;
+            mCosTheta = 1;
+            mSinTheta = 0;
+            entries.add(new Entry(y, z));
             button.setText("Running...");
-            mSensorManager.registerListener(this, mAccSensor, 100000);
-            mSensorManager.registerListener(this, mLinSensor, 100000);
+            mSensorManager.registerListener(this, mAccSensor, SensorManager.SENSOR_DELAY_NORMAL);
+            mSensorManager.registerListener(this, mLinSensor, SensorManager.SENSOR_DELAY_NORMAL);
         }
         isRunning = !isRunning;
     }
@@ -126,6 +158,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         dataSet.setDrawCircles(false);
         LineData line = new LineData(dataSet);
         chart.setData(line);
+        chart.getDescription().setText("Z to Y chart");
+        chart.getXAxis().setAxisMinimum(0f);
+        chart.getAxisLeft().setAxisMaximum(5f);
+        chart.getAxisLeft().setAxisMinimum(-5f);
+        chart.getAxisRight().setAxisMaximum(5f);
+        chart.getAxisRight().setAxisMinimum(-5f);
         chart.invalidate();
     }
 }
