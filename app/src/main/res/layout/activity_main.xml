@@ -25,7 +25,7 @@
         android:layout_marginTop="43dp"
         android:layout_marginEnd="159dp"
         android:layout_marginBottom="15dp"
-        android:onClick="say_kir"
+        android:onClick="on_click"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="1.0"

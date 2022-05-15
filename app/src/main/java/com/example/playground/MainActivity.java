@@ -128,7 +128,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) { }
 
-    public void say_kir(View view){
+    public void on_click(View view){
         Button button = (Button) findViewById(R.id.button);
         if(isRunning){
             mSensorManager.unregisterListener(this);
@@ -157,6 +157,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         dataSet.setValueTextColor(Color.GREEN);
         dataSet.setDrawCircles(false);
         LineData line = new LineData(dataSet);
+        dataSet.setDrawValues(false);
         chart.setData(line);
         chart.getDescription().setText("Z to Y chart");
         chart.getXAxis().setAxisMinimum(0f);
